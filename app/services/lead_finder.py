@@ -1,12 +1,27 @@
 import os
-import requests
 
 SERP_API_KEY = os.getenv("SERP_API_KEY")
 
 
 def find_leads(business_type, location, country, limit=5):
+
+    # 🔥 Si pas de clé → simulation
     if not SERP_API_KEY:
-        raise ValueError("SERP_API_KEY is missing")
+        return [
+            {
+                "name": f"{business_type} Example {i}",
+                "address": f"{location}, {country}",
+                "website": None if i % 2 == 0 else "https://example.com",
+                "phone": None,
+                "maps_link": "https://maps.google.com",
+                "score": "high" if i % 2 == 0 else "medium",
+                "reason": "Demo lead (no API key)"
+            }
+            for i in range(1, limit + 1)
+        ]
+
+    # 🔥 Sinon → vraie API
+    import requests
 
     query = f"{business_type} in {location} {country}"
 
@@ -16,17 +31,8 @@ def find_leads(business_type, location, country, limit=5):
         "api_key": SERP_API_KEY
     }
 
-    try:
-        response = requests.get(
-            "https://serpapi.com/search",
-            params=params,
-            timeout=30
-        )
-        response.raise_for_status()
-        data = response.json()
-
-    except requests.RequestException as e:
-        raise RuntimeError(f"SerpAPI request failed: {e}")
+    response = requests.get("https://serpapi.com/search", params=params)
+    data = response.json()
 
     leads = []
 
@@ -35,16 +41,12 @@ def find_leads(business_type, location, country, limit=5):
         website = result.get("website")
         phone = result.get("phone")
 
-        # 🎯 scoring simple
         if not website:
             score = "high"
             reason = "No website found, strong opportunity"
-        elif website and not phone:
-            score = "medium"
-            reason = "Has website but limited contact info"
         else:
-            score = "low"
-            reason = "Has website and contact info"
+            score = "medium"
+            reason = "Has website"
 
         leads.append({
             "name": result.get("title"),
