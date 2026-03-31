@@ -1,31 +1,28 @@
 import requests
-from app.core.settings import SERP_API_KEY
 
+SERP_API_KEY = "TA_CLE_API_ICI"
 
-def find_leads(target_business_type: str, location: str, country: str, limit: int = 5):
-    query = f"{target_business_type} in {location} {country}"
+def find_leads(business_type, location, country, limit=5):
+    query = f"{business_type} in {location} {country}"
 
     params = {
         "engine": "google_maps",
         "q": query,
-        "api_key": SERP_API_KEY,
+        "api_key": SERP_API_KEY
     }
 
-    response = requests.get("https://serpapi.com/search", params=params, timeout=30)
-    response.raise_for_status()
+    response = requests.get("https://serpapi.com/search", params=params)
     data = response.json()
 
     leads = []
 
     for result in data.get("local_results", [])[:limit]:
-        leads.append(
-            {
-                "name": result.get("title", ""),
-                "address": result.get("address"),
-                "website": result.get("website"),
-                "phone": result.get("phone"),
-                "maps_link": result.get("link"),
-            }
-        )
+        leads.append({
+            "name": result.get("title"),
+            "address": result.get("address"),
+            "website": result.get("website"),
+            "phone": result.get("phone"),
+            "maps_link": result.get("link")
+        })
 
     return leads
